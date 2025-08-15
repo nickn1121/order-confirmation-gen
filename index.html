@@ -3,33 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Invoice / SO Confirmation — Generator</title>
-  <!-- Tailwind -->
+  <title>Verified Electronics — SO / Invoice</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- jsPDF + AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
+  <div class="w-full h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600"></div>
+
   <div class="max-w-6xl mx-auto p-6 md:p-10 space-y-6">
     <!-- Header -->
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 flex items-center justify-center overflow-hidden">
-          <img id="logoPreview" alt="Logo" class="max-w-12 max-h-12 hidden" />
+        <div class="w-16 h-16 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 flex items-center justify-center overflow-hidden">
+          <img id="logoPreview" alt="Verified Electronics" class="max-w-14 max-h-14 hidden" />
           <span id="logoPlaceholder" class="text-[11px] text-slate-400">Logo</span>
         </div>
-        <div>
-          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Invoice / SO Confirmation</h1>
-          <p class="text-sm text-slate-500">Generate a branded PDF in seconds.</p>
-        </div>
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Verified Electronics</h1>
       </div>
       <div class="flex items-center gap-2">
         <label class="inline-flex items-center gap-2 cursor-pointer">
           <input type="file" id="logoFile" accept="image/*" class="hidden" />
           <span class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">Upload Logo</span>
         </label>
-        <button id="generateBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm">Generate PDF</button>
+        <button id="generateBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm">
+          Generate PDF
+        </button>
       </div>
     </header>
 
@@ -156,7 +155,9 @@
     <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-semibold">Line Items</h2>
-        <button type="button" id="addRowBtn" class="px-3 py-2 text-sm rounded-xl bg-slate-900 hover:bg-slate-800 text-white">Add Item</button>
+        <button type="button" id="addRowBtn" class="px-3 py-2 text-sm rounded-xl text-white bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:opacity-90">
+          Add Item
+        </button>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm" id="itemsTable">
@@ -196,9 +197,10 @@
       catch { return (cur||'USD') + ' ' + nf(v).toFixed(2); }
     };
 
-    // ===== LOGO (auto-load from repo + optional upload override) =====
-    const LOGO_URL = 'Logo_color_white_background (1).png'; // your file name in repo
+    // ----- LOGO (auto-load from repo + optional upload override) -----
+    const LOGO_URL = 'Logo_color_white_background (1).png'; // exact filename in your repo
     let logoDataUrl = null;
+    let logoImg = null;
 
     async function loadRepoLogo() {
       try {
@@ -207,14 +209,18 @@
         const blob = await res.blob();
         const reader = new FileReader();
         reader.onload = (ev) => {
-          logoDataUrl = ev.target.result;            // for PDF
-          const prev = $('logoPreview');             // for page
-          prev.src = logoDataUrl;
-          prev.classList.remove('hidden');
-          $('logoPlaceholder').classList.add('hidden');
+          logoDataUrl = ev.target.result;
+          logoImg = new Image();
+          logoImg.onload = () => {
+            const prev = $('logoPreview');
+            prev.src = logoDataUrl;
+            prev.classList.remove('hidden');
+            $('logoPlaceholder').classList.add('hidden');
+          };
+          logoImg.src = logoDataUrl;
         };
         reader.readAsDataURL(blob);
-      } catch(_) { /* ignore if not present */ }
+      } catch (_) {}
     }
 
     $('logoFile').addEventListener('change', (e)=>{
@@ -222,13 +228,30 @@
       const r = new FileReader();
       r.onload = ev => {
         logoDataUrl = ev.target.result;
-        const img = $('logoPreview'); img.src = logoDataUrl; img.classList.remove('hidden');
-        $('logoPlaceholder').classList.add('hidden');
+        logoImg = new Image();
+        logoImg.onload = () => {
+          const img = $('logoPreview');
+          img.src = logoDataUrl; img.classList.remove('hidden');
+          $('logoPlaceholder').classList.add('hidden');
+        };
+        logoImg.src = logoDataUrl;
       };
       r.readAsDataURL(f);
     });
 
-    // ===== Items table =====
+    // Fit logo proportionally within maxW × maxH
+    function drawLogoFitted(doc, x, y, maxW, maxH) {
+      if (!logoDataUrl || !logoImg) return;
+      const iw = logoImg.naturalWidth || logoImg.width;
+      const ih = logoImg.naturalHeight || logoImg.height;
+      if (!iw || !ih) return;
+      const ratio = Math.min(maxW / iw, maxH / ih);
+      const w = Math.max(1, iw * ratio);
+      const h = Math.max(1, ih * ratio);
+      doc.addImage(logoDataUrl, 'PNG', x, y, w, h, undefined, 'FAST');
+    }
+
+    // ----- Items table -----
     function addRow(d={}) {
       const tr = document.createElement('tr');
       tr.className='border-b';
@@ -274,29 +297,26 @@
       return {items, subtotal, vatTotal};
     }
 
-    // add first empty row on load
+    // First row and Add button (this fixes the issue)
     addRow({});
+    $('addRowBtn').addEventListener('click', () => addRow({}));
 
-    // per-line updates
     document.addEventListener('input', (e)=>{
       if (e.target && e.target.closest('#itemsBody tr')) {
         recalcRow(e.target.closest('tr'));
       }
     });
 
-    // toggling VAT
     $('noVat').addEventListener('change', (e)=>{
       document.querySelectorAll('.vatCell').forEach(el=> el.disabled = e.target.checked);
     });
 
-    // clear form
     $('clearBtn').addEventListener('click', ()=>{
       $('itemsBody').innerHTML='';
       addRow({});
-      // do not change logo or options
     });
 
-    // ===== PDF generation =====
+    // ----- PDF generation -----
     $('generateBtn').addEventListener('click', ()=>{
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit:'pt', format:'a4' });
@@ -329,8 +349,8 @@
       const {items, subtotal, vatTotal} = gatherItems();
       const total = subtotal + vatTotal + shipping;
 
-      // Header + logo
-      if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', left, 28, 90, 90, undefined, 'FAST');
+      // Header + properly-fitted logo (brand look)
+      drawLogoFitted(doc, left, 28, 160, 90);
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
       doc.text(docType==='invoice'?'TAX INVOICE':'Sales Order Confirmation', right, 42, {align:'right'});
       doc.setFont('helvetica','normal'); doc.setFontSize(10);
@@ -352,13 +372,12 @@
       doc.setFont('helvetica','bold'); doc.text('Commercial Terms', left, y);
       doc.setFont('helvetica','normal');
       doc.text(`Currency: ${currency}   Net Terms: ${netTerms||'-'}   Incoterms: ${incoterms||'-'}   Salesperson: ${salesperson||'-'}`, left, y+14);
-
       doc.setFont('helvetica','bold'); doc.text('Bill To', left, y+38);
       doc.setFont('helvetica','normal'); doc.text(billTo||'-', left, y+52, {maxWidth:220});
       doc.setFont('helvetica','bold'); doc.text('Ship To', 300, y+38);
       doc.setFont('helvetica','normal'); doc.text(shipTo||'-', 300, y+52, {maxWidth:240});
 
-      // Items table
+      // Items
       const tableY = y+90;
       const body = items.length ? items.map((it,i)=>[
         i+1, it.part, it.desc||'', it.qty, money(it.unit, currency), it.vatPct? it.vatPct.toFixed(2)+'%':'No VAT', money(it.ext, currency)
@@ -405,25 +424,15 @@
         doc.text(`TOTAL GBP: ${money(gbpValue, 'GBP')}`, left, after+98);
       }
 
-      // Extra notes
+      // Notes / extras
       let blockY = after + 120;
-      if (leadTime) {
-        doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14);
-        blockY += 34;
-      }
-      if (cooHts) {
-        doc.setFont('helvetica','bold'); doc.text('COO/HTS', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14);
-        blockY += 34;
-      }
-      if (notes) {
-        doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: right-left});
-        blockY += 54;
-      }
+      if (leadTime) { doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
+        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14); blockY += 34; }
+      if (cooHts) { doc.setFont('helvetica','bold'); doc.text('COO/HTS', left, blockY);
+        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14); blockY += 34; }
+      if (notes)  { doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
+        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: right-left}); blockY += 54; }
 
-      // Signatures for SO
       if (docType==='so') {
         doc.setFont('helvetica','bold'); doc.text('Authorised Signature (Seller):', left, blockY+120);
         doc.line(left, blockY+132, left+220, blockY+132);
@@ -431,14 +440,14 @@
         doc.line(300, blockY+132, 520, blockY+132);
       }
 
-      // Save
       const fn = (docType==='invoice'?'Invoice-':'SO-') + (docNumber||'Document') + '.pdf';
       doc.save(fn);
     });
 
-    // Load logo from repo on startup
+    // Start
     loadRepoLogo();
   </script>
 </body>
 </html>
+
 
