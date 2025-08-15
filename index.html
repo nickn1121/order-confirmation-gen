@@ -3,129 +3,137 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Invoice / SO Confirmation Generator — Verified Electronics</title>
+  <title>Invoice / SO Confirmation — Generator</title>
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- jsPDF + AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
-  <div class="max-w-5xl mx-auto p-6 space-y-6">
+  <div class="max-w-6xl mx-auto p-6 md:p-10 space-y-6">
+    <!-- Header -->
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-white shadow flex items-center justify-center overflow-hidden">
-          <img id="logoPreview" alt="Logo" class="max-w-12 max-h-12 hidden">
-          <span id="logoPlaceholder" class="text-xs text-slate-400">Logo</span>
+        <div class="w-14 h-14 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 flex items-center justify-center overflow-hidden">
+          <img id="logoPreview" alt="Logo" class="max-w-12 max-h-12 hidden" />
+          <span id="logoPlaceholder" class="text-[11px] text-slate-400">Logo</span>
         </div>
         <div>
-          <h1 class="text-2xl font-semibold">Invoice / SO Confirmation</h1>
-          <p class="text-sm text-slate-500">Generate a branded PDF with one click.</p>
+          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Invoice / SO Confirmation</h1>
+          <p class="text-sm text-slate-500">Generate a branded PDF in seconds.</p>
         </div>
       </div>
-      <label class="inline-flex items-center gap-2 cursor-pointer">
-        <input type="file" id="logoFile" accept="image/*" class="hidden" />
-        <span class="px-3 py-2 rounded-xl bg-white shadow text-sm">Upload Logo</span>
-      </label>
+      <div class="flex items-center gap-2">
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input type="file" id="logoFile" accept="image/*" class="hidden" />
+          <span class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">Upload Logo</span>
+        </label>
+        <button id="generateBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm">Generate PDF</button>
+      </div>
     </header>
 
-    <!-- Doc options -->
-    <section class="bg-white rounded-2xl p-4 shadow">
+    <!-- Options -->
+    <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
       <div class="grid md:grid-cols-4 gap-4">
         <div>
-          <label class="block text-sm mb-1">Document Type</label>
-          <select id="docType" class="w-full border rounded-lg px-3 py-2">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Document Type</label>
+          <select id="docType" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="so" selected>Sales Order Confirmation</option>
             <option value="invoice">Invoice</option>
-            <option value="so">Sales Order Confirmation</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm mb-1">Currency</label>
-          <select id="currency" class="w-full border rounded-lg px-3 py-2">
-            <option value="USD">USD</option>
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Currency</label>
+          <select id="currency" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="USD" selected>USD</option>
             <option value="GBP">GBP</option>
             <option value="EUR">EUR</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm mb-1">Show GBP Equivalent?</label>
-          <select id="showGbpEq" class="w-full border rounded-lg px-3 py-2">
-            <option value="no">No</option>
-            <option value="yes" selected>Yes</option>
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Show GBP Equivalent?</label>
+          <select id="showGbpEq" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="no" selected>No</option>
+            <option value="yes">Yes</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm mb-1">FX (1 GBP = ? {CUR})</label>
-          <input id="fxRate" type="number" step="0.0001" class="w-full border rounded-lg px-3 py-2" placeholder="1.32847">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">FX (1 GBP = ? {CUR})</label>
+          <input id="fxRate" type="number" step="0.00001" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g., 1.32847">
         </div>
       </div>
     </section>
 
-    <!-- Seller/Buyer -->
+    <!-- Seller / Buyer / Order -->
     <section class="grid md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-2xl p-4 shadow">
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">Seller</h2>
         <label class="block text-sm mb-1">Seller Name</label>
-        <input id="sellerName" class="w-full border rounded-lg px-3 py-2 mb-3" />
+        <input id="sellerName" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Company name" />
         <label class="block text-sm mb-1">Address</label>
-        <textarea id="sellerAddress" rows="4" class="w-full border rounded-lg px-3 py-2"></textarea>
+        <textarea id="sellerAddress" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Address lines"></textarea>
         <div class="grid grid-cols-2 gap-3 mt-3">
           <div>
             <label class="block text-sm mb-1">VAT Number</label>
-            <input id="sellerVat" class="w-full border rounded-lg px-3 py-2" />
+            <input id="sellerVat" class="w-full border rounded-lg px-3 py-2" placeholder="(optional)">
           </div>
           <div>
             <label class="block text-sm mb-1">Invoice/SO Date</label>
-            <input id="docDate" type="date" class="w-full border rounded-lg px-3 py-2" />
+            <input id="docDate" type="date" class="w-full border rounded-lg px-3 py-2">
           </div>
         </div>
       </div>
-      <div class="bg-white rounded-2xl p-4 shadow">
+
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">Buyer</h2>
         <label class="block text-sm mb-1">Company</label>
-        <input id="buyerCompany" class="w-full border rounded-lg px-3 py-2 mb-3" />
+        <input id="buyerCompany" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Customer Company Ltd." />
         <label class="block text-sm mb-1">Contact</label>
         <input id="buyerContact" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Name / Email / Phone" />
         <label class="block text-sm mb-1">Bill To</label>
-        <textarea id="billTo" rows="4" class="w-full border rounded-lg px-3 py-2"></textarea>
+        <textarea id="billTo" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Billing address"></textarea>
       </div>
-      <div class="bg-white rounded-2xl p-4 shadow">
+
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">Order / Meta</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm mb-1">Number</label>
-            <input id="docNumber" class="w-full border rounded-lg px-3 py-2" />
+            <input id="docNumber" class="w-full border rounded-lg px-3 py-2" placeholder="SO- / INV-" />
           </div>
           <div>
             <label class="block text-sm mb-1">Customer PO #</label>
-            <input id="poNumber" class="w-full border rounded-lg px-3 py-2" />
+            <input id="poNumber" class="w-full border rounded-lg px-3 py-2" placeholder="(optional)" />
           </div>
           <div>
             <label class="block text-sm mb-1">Salesperson</label>
-            <input id="salesperson" class="w-full border rounded-lg px-3 py-2" placeholder="Emir / Nick / Dan / Jake" />
+            <input id="salesperson" class="w-full border rounded-lg px-3 py-2" placeholder="Name" />
           </div>
           <div>
             <label class="block text-sm mb-1">Net Terms</label>
-            <input id="netTerms" class="w-full border rounded-lg px-3 py-2" placeholder="Net 30" />
+            <input id="netTerms" class="w-full border rounded-lg px-3 py-2" placeholder="e.g., Net 30" />
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Ship To / Incoterms -->
+    <!-- Logistics -->
     <section class="grid md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-2xl p-4 shadow">
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">Ship To</h2>
-        <textarea id="shipTo" rows="6" class="w-full border rounded-lg px-3 py-2"></textarea>
+        <textarea id="shipTo" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Shipping address"></textarea>
       </div>
-      <div class="bg-white rounded-2xl p-4 shadow">
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">Logistics</h2>
         <label class="block text-sm mb-1">Incoterms</label>
         <input id="incoterms" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="DAP / DDP / FCA / EXW" />
         <label class="block text-sm mb-1">Lead Time</label>
-        <input id="leadTime" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="10–12 days" />
+        <input id="leadTime" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="e.g., 10–12 days" />
         <label class="block text-sm mb-1">COO / HTS (note)</label>
-        <input id="cooHts" class="w-full border rounded-lg px-3 py-2" placeholder="COO: TH  HTS: 8542.31" />
+        <input id="cooHts" class="w-full border rounded-lg px-3 py-2" placeholder="COO: __  HTS: __" />
       </div>
-      <div class="bg-white rounded-2xl p-4 shadow">
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">VAT / Charges</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -138,16 +146,17 @@
           </div>
         </div>
         <label class="inline-flex items-center gap-2 mt-3 text-sm">
-          <input type="checkbox" id="noVat" class="w-4 h-4"> <span>No VAT (export/zero-rated)</span>
+          <input type="checkbox" id="noVat" class="w-4 h-4">
+          <span>No VAT (export/zero-rated)</span>
         </label>
       </div>
     </section>
 
-    <!-- Items -->
-    <section class="bg-white rounded-2xl p-4 shadow">
+    <!-- Line Items -->
+    <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-semibold">Line Items</h2>
-        <button type="button" id="addRowBtn" class="px-3 py-2 text-sm rounded-xl bg-slate-900 text-white">Add Item</button>
+        <button type="button" id="addRowBtn" class="px-3 py-2 text-sm rounded-xl bg-slate-900 hover:bg-slate-800 text-white">Add Item</button>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm" id="itemsTable">
@@ -167,16 +176,14 @@
       </div>
     </section>
 
-    <!-- Notes + Actions -->
+    <!-- Notes / Actions -->
     <section class="grid md:grid-cols-3 gap-4 items-start">
-      <div class="md:col-span-2 bg-white rounded-2xl p-4 shadow">
+      <div class="md:col-span-2 bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">Notes (appear on PDF)</h2>
-        <textarea id="notes" rows="5" class="w-full border rounded-lg px-3 py-2" placeholder="Quality: All parts subject to 3rd-party testing (EVI, X-Ray, Decap). Counterfeit guarantee: 90-day claim window."></textarea>
+        <textarea id="notes" rows="5" class="w-full border rounded-lg px-3 py-2" placeholder="Any terms, testing notes, warranty, etc."></textarea>
       </div>
-      <div class="bg-white rounded-2xl p-4 shadow flex flex-col gap-3">
-        <button type="button" id="generateBtn" class="px-4 py-3 rounded-xl bg-indigo-600 text-white font-semibold">Generate PDF</button>
-        <button type="reset" id="clearBtn" class="px-4 py-3 rounded-xl bg-slate-100">Clear Form</button>
-        <p class="text-xs text-slate-500">SO/Invoice number auto-fills on load. You can override it.</p>
+      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100 flex flex-col gap-3">
+        <button id="clearBtn" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200">Clear Form</button>
       </div>
     </section>
   </div>
@@ -189,36 +196,39 @@
       catch { return (cur||'USD') + ' ' + nf(v).toFixed(2); }
     };
 
-    // Defaults (prefill with details from your example)
-    function setDefaults(){
-      const today = new Date();
-      $('docDate').valueAsDate = today;
-      $('sellerName').value = 'Verified Electronics';
-      $('sellerAddress').value = '14 Albion Street\\nOffices 1-3\\nHull\\nEast Yorkshire\\nHU1 3TD\\nUNITED KINGDOM';
-      $('sellerVat').value = ''; // set if needed
-      $('currency').value = 'USD';
-      $('netTerms').value = 'Net 30';
-      $('incoterms').value = 'DAP';
-      $('docNumber').value = ( $('docType').value === 'invoice' ? 'ASTO-' : 'SO-' ) +
-        today.toISOString().replace(/[-:TZ.]/g,'').slice(2,8);
-      $('fxRate').value = '1.32847'; // like your sample
-      addRow({part:'', desc:'', qty:'', unit:''});
+    // ===== LOGO (auto-load from repo + optional upload override) =====
+    const LOGO_URL = 'Logo_color_white_background (1).png'; // your file name in repo
+    let logoDataUrl = null;
+
+    async function loadRepoLogo() {
+      try {
+        const res = await fetch(LOGO_URL, { cache: 'no-store' });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          logoDataUrl = ev.target.result;            // for PDF
+          const prev = $('logoPreview');             // for page
+          prev.src = logoDataUrl;
+          prev.classList.remove('hidden');
+          $('logoPlaceholder').classList.add('hidden');
+        };
+        reader.readAsDataURL(blob);
+      } catch(_) { /* ignore if not present */ }
     }
 
-    // Logo
-    let logoDataUrl = null;
     $('logoFile').addEventListener('change', (e)=>{
       const f = e.target.files[0]; if(!f) return;
       const r = new FileReader();
       r.onload = ev => {
         logoDataUrl = ev.target.result;
-        $('logoPlaceholder').classList.add('hidden');
         const img = $('logoPreview'); img.src = logoDataUrl; img.classList.remove('hidden');
+        $('logoPlaceholder').classList.add('hidden');
       };
       r.readAsDataURL(f);
     });
 
-    // Items
+    // ===== Items table =====
     function addRow(d={}) {
       const tr = document.createElement('tr');
       tr.className='border-b';
@@ -227,19 +237,21 @@
         <td class="p-2"><input class="w-full border rounded-lg px-2 py-1" placeholder="Description" value="${d.desc||''}"></td>
         <td class="p-2"><input type="number" min="0" step="1" class="w-24 border rounded-lg px-2 py-1" placeholder="Qty" value="${d.qty||''}"></td>
         <td class="p-2"><input type="number" min="0" step="0.0001" class="w-28 border rounded-lg px-2 py-1" placeholder="Unit" value="${d.unit||''}"></td>
-        <td class="p-2"><input type="number" min="0" step="0.01" class="w-24 border rounded-lg px-2 py-1 vatCell" placeholder="Line VAT %" ${$('noVat')?.checked?'disabled':''}></td>
+        <td class="p-2"><input type="number" min="0" step="0.01" class="w-24 border rounded-lg px-2 py-1 vatCell" placeholder="Line VAT %"></td>
         <td class="p-2"><input disabled class="w-28 border rounded-lg px-2 py-1 bg-slate-100 extCell" placeholder="0.00"></td>
         <td class="p-2"><button type="button" class="text-sm px-3 py-1 rounded-lg bg-rose-100 text-rose-700 rm">Remove</button></td>`;
       $('itemsBody').appendChild(tr);
       tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', ()=>recalcRow(tr)));
       tr.querySelector('.rm').addEventListener('click', ()=>tr.remove());
     }
+
     function recalcRow(tr){
       const tds = tr.querySelectorAll('td input');
       const qty = nf(tds[2].value), unit = nf(tds[3].value);
       const ext = qty*unit;
-      tr.querySelector('.extCell').value = ext.toFixed(2);
+      tr.querySelector('.extCell').value = (isFinite(ext)?ext:0).toFixed(2);
     }
+
     function gatherItems(){
       const rows = [...document.querySelectorAll('#itemsBody tr')];
       let items=[], subtotal=0, vatTotal=0;
@@ -262,17 +274,34 @@
       return {items, subtotal, vatTotal};
     }
 
-    $('addRowBtn').addEventListener('click', ()=>addRow());
+    // add first empty row on load
+    addRow({});
+
+    // per-line updates
+    document.addEventListener('input', (e)=>{
+      if (e.target && e.target.closest('#itemsBody tr')) {
+        recalcRow(e.target.closest('tr'));
+      }
+    });
+
+    // toggling VAT
     $('noVat').addEventListener('change', (e)=>{
       document.querySelectorAll('.vatCell').forEach(el=> el.disabled = e.target.checked);
     });
 
-    // Generate PDF
+    // clear form
+    $('clearBtn').addEventListener('click', ()=>{
+      $('itemsBody').innerHTML='';
+      addRow({});
+      // do not change logo or options
+    });
+
+    // ===== PDF generation =====
     $('generateBtn').addEventListener('click', ()=>{
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit:'pt', format:'a4' });
       const left=40, right=555;
-      const aline = y => doc.line(left,y,right,y);
+      const line = y => doc.line(left,y,right,y);
 
       const docType = $('docType').value;
       const currency = ($('currency').value||'USD').toUpperCase();
@@ -300,25 +329,24 @@
       const {items, subtotal, vatTotal} = gatherItems();
       const total = subtotal + vatTotal + shipping;
 
-      // Header
-      if(logoDataUrl) doc.addImage(logoDataUrl, 'PNG', left, 28, 90, 90, undefined, 'FAST');
+      // Header + logo
+      if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', left, 28, 90, 90, undefined, 'FAST');
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
       doc.text(docType==='invoice'?'TAX INVOICE':'Sales Order Confirmation', right, 42, {align:'right'});
       doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      doc.text(`${docType==='invoice'?'Invoice':'SO'} Number: ${docNumber}`, right, 58, {align:'right'});
-      doc.text(`Date: ${docDate}`, right, 72, {align:'right'});
+      if (docNumber) doc.text(`${docType==='invoice'?'Invoice':'SO'} Number: ${docNumber}`, right, 58, {align:'right'});
+      if (docDate) doc.text(`Date: ${docDate}`, right, 72, {align:'right'});
       if (poNumber) doc.text(`Reference / PO: ${poNumber}`, right, 86, {align:'right'});
       if (sellerVat) doc.text(`VAT Number: ${sellerVat}`, right, 100, {align:'right'});
 
-      // Seller / Buyer blocks
+      // Parties
       let y=132;
       doc.setFont('helvetica','bold'); doc.text('Seller', left, y);
       doc.text('Buyer', 300, y);
       doc.setFont('helvetica','normal');
-      y+=14; doc.text(sellerName, left, y); doc.text(buyerCompany||'-', 300, y);
-      y+=12; doc.text(sellerAddress||'-', left, y, {maxWidth:220});
-      doc.text(buyerContact||'-', 300, y, {maxWidth:220});
-      y+=58; aline(y); y+=16;
+      y+=14; doc.text(sellerName||'-', left, y); doc.text(buyerCompany||'-', 300, y);
+      y+=12; doc.text(sellerAddress||'-', left, y, {maxWidth:220}); doc.text(buyerContact||'-', 300, y, {maxWidth:220});
+      y+=58; line(y); y+=16;
 
       // Terms & addresses
       doc.setFont('helvetica','bold'); doc.text('Commercial Terms', left, y);
@@ -330,7 +358,7 @@
       doc.setFont('helvetica','bold'); doc.text('Ship To', 300, y+38);
       doc.setFont('helvetica','normal'); doc.text(shipTo||'-', 300, y+52, {maxWidth:240});
 
-      // Line items
+      // Items table
       const tableY = y+90;
       const body = items.length ? items.map((it,i)=>[
         i+1, it.part, it.desc||'', it.qty, money(it.unit, currency), it.vatPct? it.vatPct.toFixed(2)+'%':'No VAT', money(it.ext, currency)
@@ -358,8 +386,8 @@
       });
       let after = doc.lastAutoTable ? doc.lastAutoTable.finalY + 12 : tableY + 40;
 
-      // Totals block (incl GBP equivalent if wanted)
-      const vatLabel = $('noVat').checked ? 'No VAT' : `VAT`;
+      // Totals
+      const vatLabel = $('noVat').checked ? 'No VAT' : 'VAT';
       doc.setFont('helvetica','bold'); doc.text('Summary', left, after);
       doc.setFont('helvetica','normal');
       after+=14;
@@ -369,16 +397,15 @@
       doc.setFont('helvetica','bold'); doc.text(`TOTAL: ${money(total, currency)}`, left, after+48);
 
       if (showGbpEq && currency !== 'GBP' && fxRate>0) {
-        const gbp = (cur)=> cur==='USD' || cur==='EUR' ? 'GBP' : 'GBP';
         const gbpValue = total / fxRate;
         doc.setFont('helvetica','normal');
         doc.text(`*GBP Equivalent Conversion`, left, after+68);
         doc.text(`1 GBP = ${fxRate.toFixed(5)} ${currency}`, left, after+82);
         doc.setFont('helvetica','bold');
-        doc.text(`TOTAL ${gbp()}: ${money(gbpValue, 'GBP')}`, left, after+98);
+        doc.text(`TOTAL GBP: ${money(gbpValue, 'GBP')}`, left, after+98);
       }
 
-      // Lead time / COO
+      // Extra notes
       let blockY = after + 120;
       if (leadTime) {
         doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
@@ -396,59 +423,6 @@
         blockY += 54;
       }
 
-      // Payment details (from your invoice)
-      if (docType==='invoice') {
-        doc.setFont('helvetica','bold'); doc.text('Payment Details', left, blockY);
-        doc.setFont('helvetica','normal');
-        // USD Account (Wise US) — details sourced from your example invoice
-        doc.text('USD Account (for payments from the US or via SWIFT)', left, blockY+16);
-        doc.text([
-          'Account Name: Verified Electronics Limited',
-          'Account Number: 991745950274955',
-          'Account Type: Deposit',
-          'Routing Number (Wire & ACH): 084009519',
-          'Bank Address: Wise US Inc, 30 W. 26th Street, Sixth Floor, New York, NY, 10010, United States',
-          'SWIFT/BIC: TRWIUS35XXX'
-        ], left, blockY+30, {maxWidth: right-left}); // filecite marker applies to the presence of these bank lines
-        // GBP Account (Wise UK) — details sourced from your example invoice
-        const gbpStart = blockY+120;
-        doc.text('GBP Account (for payments from the UK or via SWIFT)', left, gbpStart);
-        doc.text([
-          'Account Name: Verified Electronics Limited',
-          'Account Number: 65566561',
-          'Sort Code: 23-08-01',
-          'IBAN: GB42 TRWI 2308 0165 5665 61',
-          'SWIFT/BIC: TRWIGB2LXXX',
-          'Bank Name & Address: Wise Payments Limited, 1st Floor, Worship Square, 65 Clifton Street, London, EC2A 4JE, United Kingdom'
-        ], left, gbpStart+14, {maxWidth: right-left});
-        // (Bank info copied from your uploaded invoice.) :contentReference[oaicite:1]{index=1}
-      }
-
-      // Payment Advice stub (like your example)
-      if (docType==='invoice') {
-        const pageH = doc.internal.pageSize.height;
-        let paY = pageH - 180;
-        aline(paY-8);
-        doc.setFont('helvetica','bold'); doc.text('PAYMENT ADVICE', left, paY);
-        doc.setFont('helvetica','normal');
-        doc.text([
-          'To: Verified Electronics',
-          '14 Albion Street',
-          'Offices 1-3',
-          'Hull',
-          'East Yorkshire',
-          'HU1 3TD',
-          'UNITED KINGDOM'
-        ], left, paY+16);
-        doc.text([
-          `Customer ${buyerCompany||''}`,
-          `${docType==='invoice'?'Invoice':'SO'} Number ${docNumber}`,
-          `Amount Due ${money(total, currency)}`,
-          `Due Date ${docDate ? new Date(docDate) : ''}`
-        ], 300, paY+16);
-        doc.text('Amount Enclosed _______', 300, paY+80);
-      }
-
       // Signatures for SO
       if (docType==='so') {
         doc.setFont('helvetica','bold'); doc.text('Authorised Signature (Seller):', left, blockY+120);
@@ -462,25 +436,9 @@
       doc.save(fn);
     });
 
-    // Recalc item on input
-    document.addEventListener('input', (e)=>{
-      if (e.target && e.target.closest('#itemsBody tr')) {
-        recalcRow(e.target.closest('tr'));
-      }
-    });
-
-    // Clear
-    $('clearBtn').addEventListener('click', ()=>{
-      $('itemsBody').innerHTML='';
-      addRow({});
-    });
-
-    // Init
-    setDefaults();
-    $('docType').addEventListener('change', ()=>{
-      const today = new Date();
-      $('docNumber').value = ( $('docType').value==='invoice' ? 'INV-' : 'SO-') + today.toISOString().replace(/[-:TZ.]/g,'').slice(2,8);
-    });
+    // Load logo from repo on startup
+    loadRepoLogo();
   </script>
 </body>
 </html>
+
